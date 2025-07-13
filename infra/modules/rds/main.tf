@@ -33,14 +33,14 @@ resource "aws_db_subnet_group" "main" {
 }
 
 resource "aws_db_instance" "mysql" {
-  identifier           = "portfolio-mysql"
-  engine               = "mysql"
-  instance_class       = "db.t3.micro"
-  allocated_storage    = 20
-  username             = "admin"
-  password             = "Password1234!"  # 最終的に secret 管理
-  skip_final_snapshot  = true
-  publicly_accessible  = true
+  identifier          = "portfolio-mysql"
+  engine              = "mysql"
+  instance_class      = "db.t3.micro"
+  allocated_storage   = 20
+  username            = "admin"
+  password            = "Password1234!" # 最終的に secret 管理
+  skip_final_snapshot = true
+  publicly_accessible = true
 
   vpc_security_group_ids = [aws_security_group.rds_sg.id]
   db_subnet_group_name   = aws_db_subnet_group.main.name
