@@ -1,108 +1,84 @@
-# Portfolio-2: AWS本番レベルインフラ構成
+# Portfolio-2: AWS 本番レベルインフラ構築
 
-このリポジトリは、Terraform を用いて本番レベルの AWS インフラをコード化（IaC）したもの。
+## 概要
+本リポジトリは AWS を活用した本番レベルのインフラ構成を Terraform により完全コード化したポートフォリオである。  
+モジュール化、環境分離、S3 + DynamoDB による state 管理、CI/CD 自動化までを網羅。
 
----
+## 使用技術スタック
+- AWS
+  - VPC / Subnet / IGW / NAT / RouteTable
+  - ALB / ECS(Fargate) / RDS(MySQL)
+  - IAM / WAF / CloudWatch / SNS
+  - SSM Session Manager
+- Terraform >= 1.6.0
+- GitHub Actions (CI/CD)
+- GitHub (バージョン管理)
 
-## ✅ 概要
+## 構成理由
+- **IaC による管理**: 再現性・保守性・レビュー性向上
+- **モジュール化**: VPC / ALB / ECS / RDS など機能単位に分割
+- **環境分離**: dev / prod 環境ディレクトリ分離
+- **Backend 構成**: S3 + DynamoDB による remote state 管理と lock 機構
+- **CI/CD**: GitHub Actions による terraform fmt / plan 自動実行
 
-以下の AWS リソースを含むインフラ構成：
+## .gitignore 設計
+- `*.tfstate`
+- `*.tfstate.*`
+- `.terraform/`
+- `crash.log`
+- `terraform.tfvars`
+- `override.tf`
+- `override.tf.json`
+- `*_override.tf`
+- `*_override.tf.json`
+- `.terraform.lock.hcl`
 
-- VPC / サブネット / インターネットゲートウェイ / NAT / ルートテーブル
-- Application Load Balancer (ALB)
-- ECS (Fargate) + Nginx
-- RDS (MySQL)
-- IAM ロール
-- CloudWatch / SNS による監視
-- SSM Session Manager による管理
-- Terraform バックエンド（S3 + DynamoDB Lock）
-- `dev` と `prod` 環境分離
+state ファイルやキャッシュは S3 Backend で管理し Git に含めない。
 
----
+## 使用
+- `infra/` 配下に Terraform モジュールと環境構成
+  - `infra/modules`: 各種モジュール
+  - `infra/dev`: 開発環境
+  - `infra/prod`: 本番環境
 
-## ✅ アーキテクチャ図
-
+## アーキテクチャ図
 ```mermaid
 graph TD
-  VPC --> IGW
-  VPC --> PublicSubnet1
-  VPC --> PublicSubnet2
-  PublicSubnet1 --> ALB
-  PublicSubnet2 --> ALB
+  VPC --> Subnet1a
+  VPC --> Subnet1c
+  Subnet1a --> ALB
+  Subnet1c --> ALB
   ALB --> ECS
   ECS --> RDS
-  CloudWatch --> SNS
-  IAM --> SSM
+  ECS --> CloudWatch
+  ALB --> WAF
+  SNS -.-> CloudWatch
+  SSM --> ECS
 ```
 
----
+## ブランチ戦略
+- `main`: 本番ブランチ
+- `dev`: 開発ブランチ
+- PR ベースのワークフローを採用
 
-## ✅ 前提条件
-
-- Terraform バージョン >= 1.6.0
-- AWS CLI がセットアップ済み (`aws configure`)
-- AWS アカウントと必要な権限
-
----
-
-## ✅ 利用方法
-
-### 環境初期化（dev / prod 各ディレクトリで実行）
-```
-cd infra/dev    # または cd infra/prod
+## 利用方法
+```bash
+# 初期化
 terraform init
-```
 
-### コードフォーマット確認
-```
+# フォーマット確認
 terraform fmt -check
-```
 
-### Plan 実行
-```
+# plan 実行
 terraform plan
-```
 
-### Apply 実行
-```
+# 適用
 terraform apply
 ```
 
----
+各環境 (`infra/dev`, `infra/prod`) ごとに実行。
 
-## ✅ ブランチ戦略
-
-- `main` : 本番環境用インフラコード
-- `dev` : 開発環境用インフラコード
-- `dev` で動作確認後、Pull Request によって `main` にマージ
-
----
-
-## ✅ .gitignore 設計
-
-以下のファイルを `.gitignore` に追加し、機密情報や状態ファイルを管理から除外：
-
-```
-*.tfstate
-*.tfstate.*
-.terraform/
-crash.log
-terraform.tfvars
-override.tf
-override.tf.json
-*_override.tf
-*_override.tf.json
-.terraform.lock.hcl
-```
-
----
-
-## ✅ 備考
-
-- **Terraform バックエンド**  
-  - S3 バケット: `hasegawa-terraform-state`
-  - DynamoDB テーブル: `terraform-lock`
-
-- **AWS リージョン**  
-  - `ap-northeast-1`（東京リージョン）
-
+## 備考
+- **CI/CD**: GitHub Actions による fmt / plan チェックワークフローを実装済み。
+- **Backend**: `hasegawa-terraform-state` S3 バケット、`terraform-lock` DynamoDB テーブルを backend に使用。
+- **セキュリティ**: IAM 最小権限設計、セキュリティグループを適切に設定。
