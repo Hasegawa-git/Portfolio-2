@@ -9,7 +9,7 @@ This repository contains a production-ready AWS infrastructure template using:
 - Security design (IAM, WAF, SSM Session Manager)
 - Monitoring (CloudWatch, SNS)
 
-This portfolio demonstrates the skills necessary to deploy secure, scalable, and automated AWS infrastructure — equivalent to a 700,000 JPY/month contract engineer level.
+This portfolio demonstrates the skills necessary to deploy secure, scalable, and automated AWS infrastructure
 
 ## Architecture Diagram
 
